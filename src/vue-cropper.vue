@@ -1094,6 +1094,10 @@ export default {
             this.cropW = fixedWidth;
           }
         }
+
+        //自己限制下裁剪框大小
+        this.cropW = this.cropW == 0 ? 0 : this.cropW > 52 ? this.cropW : 52;
+        this.cropH = this.cropH == 0 ? 0 : this.cropH > 52 ? this.cropH : 52;
       });
     },
 
@@ -1734,15 +1738,14 @@ export default {
       // 判断是否大于容器
       this.cropW = w;
       this.cropH = h;
-      this.checkCropLimitSize()
-      this.$nextTick(() => {
-        // 居中走一走
-        this.cropOffsertX = (this.w - this.cropW) / 2;
-        this.cropOffsertY = (this.h - this.cropH) / 2;
-        if (this.centerBox) {
+      // 居中走一走
+      this.cropOffsertX = (this.w - w) / 2;
+      this.cropOffsertY = (this.h - h) / 2;
+      if (this.centerBox) {
+        this.$nextTick(() => {
           this.moveCrop(null, true);
-        }
-      });
+        });
+      }
     },
     // 重置函数， 恢复组件置初始状态
     refresh() {
