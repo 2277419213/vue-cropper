@@ -36,7 +36,7 @@ if(process.browser) {
 
 ## vue-cropper
 ### 一个优雅的图片裁剪插件
- [预览](http://xyxiao.cn/vue-cropper/example/)
+ [预览](http://github.xyxiao.cn/vue-cropper/example/)
  [english](https://github.com/xyxiao001/vue-cropper/blob/master/english.md)
 
 ### vue-cropper 相关文章参考。
@@ -365,6 +365,11 @@ data type
 
 
 ## 更新日志
+### 0.55
+```
+修复 ios 版本小于 13.4没有处理图片旋转的 bug
+```
+
 ### 0.54
 ```
 去除 log 信息

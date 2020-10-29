@@ -271,7 +271,7 @@ export default {
     },
     // 可以压缩图片宽高  默认不超过200
     maxImgSize: {
-      type: Number,
+      type: [Number, String],
       default: 2000
     },
     // 倍数  可渲染当前截图框的n倍 0 - 1000;
@@ -435,9 +435,16 @@ export default {
               orientation = -1
           }
         } else {
-            if (this.getVersion('appleWebkit')[0] >= 605 ) {
-              orientation = -1
-          }
+          //  判断 ios 版本进行处理
+         // 针对 ios 版本大于 13.4的系统不做图片旋转
+         const isIos  = navigator.userAgent.toLowerCase().match(/cpu iphone os (.*?) like mac os/)
+         if (isIos) {
+           let version = isIos[1]
+           version = version.split('_')
+           if (version[0] > 13 ||  (version[0] >= 13 && version[1] >= 4)) {
+             orientation = -1
+           }
+         }
         }
       }
       
@@ -1655,7 +1662,16 @@ export default {
             if (str.search("px") !== -1) {
               str = str.replace("px", "");
               imgW = parseFloat(str);
-              scale = imgW / this.trueWidth;
+              const scaleX = imgW / this.trueWidth;
+              let scaleY = 1;
+              let strH = arr[1];
+              if (strH.search("px") !== -1) {
+                strH = strH.replace("px", "");
+                imgH = parseFloat(strH);
+                scaleY = imgH / this.trueHeight;
+              }
+              scale = Math.min(scaleX,scaleY)
+
             }
             if (str.search("%") !== -1) {
               str = str.replace("%", "");
@@ -1690,8 +1706,9 @@ export default {
       let maxWidth = this.w;
       let maxHeight = this.h;
       if (this.centerBox) {
-        let imgW = this.trueWidth * this.scale;
-        let imgH = this.trueHeight * this.scale;
+        const switchWH = Math.abs(this.rotate) % 2 > 0
+        let imgW = (switchWH ? this.trueHeight : this.trueWidth) * this.scale;
+        let imgH = (switchWH ? this.trueWidth : this.trueHeight) * this.scale;
         maxWidth = imgW < maxWidth ? imgW : maxWidth;
         maxHeight = imgH < maxHeight ? imgH : maxHeight;
       }

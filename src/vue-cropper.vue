@@ -271,7 +271,7 @@ export default {
     },
     // 可以压缩图片宽高  默认不超过200
     maxImgSize: {
-      type: Number,
+      type: [Number, String],
       default: 2000
     },
     // 倍数  可渲染当前截图框的n倍 0 - 1000;
@@ -435,9 +435,16 @@ export default {
               orientation = -1
           }
         } else {
-            if (this.getVersion('appleWebkit')[0] >= 605 ) {
-              orientation = -1
-          }
+          //  判断 ios 版本进行处理
+         // 针对 ios 版本大于 13.4的系统不做图片旋转
+         const isIos  = navigator.userAgent.toLowerCase().match(/cpu iphone os (.*?) like mac os/)
+         if (isIos) {
+           let version = isIos[1]
+           version = version.split('_')
+           if (version[0] > 13 ||  (version[0] >= 13 && version[1] >= 4)) {
+             orientation = -1
+           }
+         }
         }
       }
       
@@ -1095,9 +1102,28 @@ export default {
           }
         }
 
+          let { cropW, cropH, limitMinSize } = this;
+          let limitMinNum = new Array;
+          if (!Array.isArray[limitMinSize]) {
+              limitMinNum = [limitMinSize[0], limitMinSize[1]]
+          } else {
+              limitMinNum = limitMinSize
+          }
+
+          //限制最小宽度和高度
+          if (parseFloat(limitMinNum[0]) && this.cropW < parseFloat(limitMinNum[0])) {
+              this.cropW = limitMinNum[0];
+              // this.$refs.cropper.stopCrop;
+          }
+          if (parseFloat(limitMinNum[1]) && this.cropH < parseFloat(limitMinNum[1])) {
+              this.cropH = limitMinNum[1];
+              // this.$refs.cropper.stopCrop;
+          }
+          
         //自己限制下裁剪框大小
         this.cropW = this.cropW == 0 ? 0 : this.cropW > 52 ? this.cropW : 52;
         this.cropH = this.cropH == 0 ? 0 : this.cropH > 52 ? this.cropH : 52;
+
       });
     },
 
@@ -1106,7 +1132,7 @@ export default {
 
       let limitMinNum = new Array;
       if (!Array.isArray[limitMinSize]) {
-        limitMinNum = [limitMinSize, limitMinSize]
+        limitMinNum = [limitMinSize[0], limitMinSize[1]]
       } else {
         limitMinNum = limitMinSize
       }
@@ -1607,7 +1633,12 @@ export default {
           this.loading = false;
           // // 获取是否开启了自动截图
           if (this.autoCrop) {
-            this.goAutoCrop();
+              if(this.limitMinSize){
+                  this.goAutoCrop(this.limitMinSize[0], this.limitMinSize[1]);
+              }
+              else {
+                  this.goAutoCrop();
+              }
           }
           // 图片加载成功的回调
           this.$emit("img-load", "success");
@@ -1659,7 +1690,16 @@ export default {
             if (str.search("px") !== -1) {
               str = str.replace("px", "");
               imgW = parseFloat(str);
-              scale = imgW / this.trueWidth;
+              const scaleX = imgW / this.trueWidth;
+              let scaleY = 1;
+              let strH = arr[1];
+              if (strH.search("px") !== -1) {
+                strH = strH.replace("px", "");
+                imgH = parseFloat(strH);
+                scaleY = imgH / this.trueHeight;
+              }
+              scale = Math.min(scaleX,scaleY)
+
             }
             if (str.search("%") !== -1) {
               str = str.replace("%", "");
@@ -1694,8 +1734,9 @@ export default {
       let maxWidth = this.w;
       let maxHeight = this.h;
       if (this.centerBox) {
-        let imgW = this.trueWidth * this.scale;
-        let imgH = this.trueHeight * this.scale;
+        const switchWH = Math.abs(this.rotate) % 2 > 0
+        let imgW = (switchWH ? this.trueHeight : this.trueWidth) * this.scale;
+        let imgH = (switchWH ? this.trueWidth : this.trueHeight) * this.scale;
         maxWidth = imgW < maxWidth ? imgW : maxWidth;
         maxHeight = imgH < maxHeight ? imgH : maxHeight;
       }
